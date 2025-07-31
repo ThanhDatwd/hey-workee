@@ -1,33 +1,66 @@
 package com.katech.service.quote.service;
 
+import com.katech.service.common.dto.PageableDto;
+import com.katech.service.job.dto.JobMatchResponseDto;
 import com.katech.service.quote.dto.QuoteNotification;
 import com.katech.service.quote.dto.QuoteRequest;
+import com.katech.service.quote.dto.QuoteResponseDto;
+import com.katech.service.quote.dto.QuoteResponseRecord;
 import com.katech.service.quote.entity.Quote;
 import com.katech.service.quote.enums.QuoteStatus;
+import com.katech.service.quote.mapper.QuoteMapper;
 import com.katech.service.quote.repository.QuoteRepository;
+import com.katech.service.quote.repository.custom.QuoteCustomRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class QuoteService {
 
     private final QuoteRepository quoteRepository;
+    private final QuoteCustomRepository quoteCustomRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private QuoteMapper quoteMapper;
+
+    public PageableDto<QuoteResponseDto> getQuotesByJobRequest(String jobRequestId, Pageable pageable) {
+        // Get flat records from repository
+        var pageResult = quoteCustomRepository.getQuotesByJobRequest(jobRequestId, pageable);
+
+        // Transform flat records to nested DTOs using toQuoteResponseDto() method
+        List<QuoteResponseDto> quoteDtos = pageResult.getContent().stream()
+                .map(QuoteResponseRecord::toQuoteResponseDto)
+                .toList();
+
+        return PageableDto.<QuoteResponseDto>builder()
+                .content(quoteDtos)
+                .totalElements(pageResult.getTotalElements())
+                .build();
+    }
 
     public Quote submitQuote(QuoteRequest request) {
         Quote quote = Quote.builder()
                 .jobRequestId(request.getJobRequestId())
                 .workerId(request.getWorkerId())
-                .workerName(request.getWorkerName())
+//                .workerName(request.getWorkerName())
                 .customerId(request.getCustomerId())
                 .price(request.getPrice())
                 .message(request.getMessage())
+                .estimatedFinishTime(request.getEstimatedFinishTime())
+                .warrantyDuration(request.getWarrantyDuration())
                 .status(QuoteStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -37,7 +70,6 @@ public class QuoteService {
         QuoteNotification notification = QuoteNotification.builder()
                 .jobRequestId(savedQuote.getJobRequestId())
                 .workerId(savedQuote.getWorkerId())
-                .workerName(savedQuote.getWorkerName())
                 .price(savedQuote.getPrice())
                 .message(savedQuote.getMessage())
                 .createdAt(savedQuote.getCreatedAt())
@@ -67,7 +99,6 @@ public class QuoteService {
                 QuoteNotification.builder()
                         .jobRequestId(acceptedQuote.getJobRequestId())
                         .workerId(acceptedQuote.getWorkerId())
-                        .workerName(acceptedQuote.getWorkerName())
                         .price(acceptedQuote.getPrice())
                         .message("Báo giá của bạn đã được khách hàng chấp nhận.")
                         .status(QuoteStatus.ACCEPTED)
@@ -82,7 +113,6 @@ public class QuoteService {
                         QuoteNotification.builder()
                                 .jobRequestId(rejectedQuote.getJobRequestId())
                                 .workerId(rejectedQuote.getWorkerId())
-                                .workerName(rejectedQuote.getWorkerName())
                                 .price(rejectedQuote.getPrice())
                                 .message("Báo giá của bạn đã bị từ chối vì khách hàng đã chọn báo giá khác.")
                                 .status(QuoteStatus.REJECTED)
@@ -107,7 +137,6 @@ public class QuoteService {
         QuoteNotification notification = QuoteNotification.builder()
                 .jobRequestId(quote.getJobRequestId())
                 .workerId(quote.getWorkerId())
-                .workerName(quote.getWorkerName())
                 .price(quote.getPrice())
                 .message("Báo giá của bạn đã bị từ chối.")
                 .status(QuoteStatus.REJECTED)
@@ -140,7 +169,6 @@ public class QuoteService {
         QuoteNotification notification = QuoteNotification.builder()
                 .jobRequestId(quote.getJobRequestId())
                 .workerId(quote.getWorkerId())
-                .workerName(quote.getWorkerName())
                 .price(quote.getPrice())
                 .message("Người lao động đã huỷ báo giá.")
                 .status(QuoteStatus.CANCELED)

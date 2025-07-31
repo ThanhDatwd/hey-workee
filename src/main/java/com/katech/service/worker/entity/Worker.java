@@ -67,7 +67,7 @@ public class Worker {
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
-        if (ratingAvg == null) ratingAvg = 0f;
+        if (ratingAvg == null) ratingAvg = 5f;
         if (jobsDone == null) jobsDone = 0;
     }
 }

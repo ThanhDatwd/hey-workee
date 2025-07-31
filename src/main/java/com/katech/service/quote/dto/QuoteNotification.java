@@ -17,5 +17,6 @@ public class QuoteNotification {
     private Integer price;
     private String message;
     private QuoteStatus status;
+    private Integer estimatedFinishTime;
     private LocalDateTime createdAt;
 }

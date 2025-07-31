@@ -1,5 +1,6 @@
 package com.katech.service.quote.dto;
 
+import com.katech.service.quote.enums.QuoteStatus;
 import lombok.Data;
 
 import java.util.UUID;
@@ -8,8 +9,10 @@ import java.util.UUID;
 public class QuoteRequest {
     private UUID jobRequestId;
     private UUID workerId;
-    private String workerName;
     private UUID customerId;
     private Integer price;
+    private Integer estimatedFinishTime;
+    private Integer warrantyDuration;
     private String message;
+    private QuoteStatus status;
 }

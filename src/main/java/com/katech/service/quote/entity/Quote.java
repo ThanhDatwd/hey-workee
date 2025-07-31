@@ -28,13 +28,16 @@ public class Quote {
     private UUID workerId;
 
     @Column(nullable = false)
-    private String workerName;
-
-    @Column(nullable = false)
     private UUID customerId;
 
     @Column(nullable = false)
     private Integer price;
+
+    @Column(name="estimated_finish_time", nullable = true)
+    private Integer estimatedFinishTime;
+
+    @Column(name="warranty_duration", nullable = true)
+    private Integer warrantyDuration;
 
     private String message;
 
